@@ -1,0 +1,25 @@
+# Publica uma versão do Retornei: quando chega um envio no ramo "publicar"
+# (o instalador, o .blockmap e o latest.yml), cria a release e apaga o ramo.
+name: Publicar versão
+on:
+  push:
+    branches: [publicar]
+permissions:
+  contents: write
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: publicar
+      - name: Criar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSAO=$(grep '^version:' envio/latest.yml | awk '{print $2}')
+          gh release create "v$VERSAO" envio/* --repo "$GITHUB_REPOSITORY" --target main --title "Retornei $VERSAO" --notes "Retornei $VERSAO"
+      - name: Apagar o ramo de envio
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/publicar"
